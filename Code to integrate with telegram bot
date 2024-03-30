@@ -1,0 +1,43 @@
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+import requests
+import os
+
+TOKEN = '7181242957:AAEpbwxwrNed_0ne5u5Xjw0ycLHmHwDc-FA'  # Replace 'your_bot_token' with your actual bot token
+
+def start(update, context):
+    context.bot.send_message(chat_id=update.effective_chat.id, text="Please send a text message.")
+
+def handle_text(update, context):
+    text_message = update.message.text
+
+    # Prepare the filename
+    filename = f"{update.effective_chat.id}.txt"
+
+    # Prepare the content to be uploaded
+    content = text_message.encode('utf-8')
+
+    # Prepare the PUT request
+    bucket = 'midway0989'
+    api_url = f'https://j6jftvpesd.execute-api.ap-south-1.amazonaws.com/dev/{bucket}/{filename}'
+
+    try:
+        response = requests.put(api_url, data=content)
+        response.raise_for_status()  # Raise an exception for non-2xx status codes
+        # Handle successful upload
+        context.bot.send_message(chat_id=update.effective_chat.id, text='Text uploaded successfully!\n Please Wait! The text is getting processed....')
+    except requests.exceptions.RequestException as e:
+        # Handle errors from API request
+        context.bot.send_message(chat_id=update.effective_chat.id, text=f'An error occurred while uploading the text: {e}')
+
+def main():
+    updater = Updater(token=TOKEN, use_context=True)
+    dp = updater.dispatcher
+
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_text))  # Handle text messages
+
+    updater.start_polling()
+    updater.idle()
+
+if __name__ == '__main__':
+    main()
